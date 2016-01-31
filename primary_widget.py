@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
 #!/usr/bin/env python3
 
 import os
+import sys
 from PyQt5.QtWidgets import (QWidget, QGridLayout, QVBoxLayout,
                              QGroupBox, QLabel, QLineEdit,
                              QPushButton)
@@ -23,7 +25,8 @@ class PrimaryWidget(QWidget):
         self.logged_in = False
 
         # Start other thread
-        self.cw = ClipboardWatcher(self.handle_login, lambda x: print("change xxx:", x))
+        self.cw = ClipboardWatcher(self.handle_login, lambda x:
+            print("Change:", str(x).encode(sys.stdout.encoding, errors='replace')))
 
         self.preload_ressources()
 

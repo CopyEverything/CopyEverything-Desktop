@@ -1,8 +1,10 @@
+# -*- coding: utf-8 -*-
 #!/usr/bin/env python3
 
 import time
 import threading
 import pyperclip
+import sys
 from db import Database
 
 
@@ -61,16 +63,16 @@ class ClipboardWatcher(threading.Thread):
 
     def update_paste(self, replacing_paste=None):
         if replacing_paste is None:
-            replacing_paste = pyperclip.paste()
+            replacing_paste = str(pyperclip.paste())
 
         if replacing_paste != self.recent_value:
             self.db.insert_new_paste(replacing_paste)
             self.recent_value = replacing_paste
 
     def update_copy(self):
-        latest_paste = self.db.get_latest_paste()
+        latest_paste = str(self.db.get_latest_paste())
         if latest_paste != self.recent_value:
-            print("updating with", latest_paste)
+            print("updating with", latest_paste.encode(sys.stdout.encoding, errors='replace'))
             pyperclip.copy(latest_paste)
             self.recent_value = latest_paste
 

@@ -1,8 +1,10 @@
+# -*- coding: utf-8 -*-
 #!/usr/bin/env python3
 
 import requests
 import json
 import random
+import sys
 import string
 from time import time
 
@@ -38,9 +40,7 @@ class Database():
             str(self.userid) + ".json?auth=" + self.token
         self.get_latest_paste()  # update the latest paste number
         
-        chars = string.ascii_uppercase + string.digits
-        rnd_string = ''.join(random.choice(chars) for _ in range(10))
-        new_paste = {"content": paste, "timestamp": int(time())}
+        new_paste = {"content": paste, "timestamp": int(time()*1000)}
         try:
             requests.post(url, data=json.dumps(new_paste))
         except requests.exceptions.ConnectionError:
@@ -60,7 +60,7 @@ class Database():
             return json_el.popitem()[1]["content"]
         else:
             self.insert_empty_row()
-            return ""
+            return u""
 
     def authenticate(self):
         outcome = "incorrect password"
