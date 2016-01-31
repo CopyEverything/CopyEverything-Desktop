@@ -4,13 +4,14 @@ import os
 from PyQt5.QtWidgets import (QWidget, QGridLayout, QVBoxLayout,
                              QGroupBox, QLabel, QLineEdit,
                              QPushButton)
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import Qt, QSize, pyqtSignal
 from PyQt5.QtGui import (QMovie, QPixmap)
 from ClipboardWatcher import ClipboardWatcher
 
 
 class PrimaryWidget(QWidget):
 
+    trigger = pyqtSignal()
     def __init__(self, w, h):
         # init QWidget Parent
         super(PrimaryWidget, self).__init__()
@@ -22,8 +23,7 @@ class PrimaryWidget(QWidget):
         self.logged_in = False
 
         # Start other thread
-        self.cw = ClipboardWatcher(lambda x: print("change xxx:", x),
-                                   self.handle_login)
+        self.cw = ClipboardWatcher(self.handle_login, lambda x: print("change xxx:", x))
 
         self.preload_ressources()
 
@@ -100,9 +100,14 @@ class PrimaryWidget(QWidget):
         self.main_label.setMovie(self.loading_movie)
         self.loading_movie.start()
         self.cw.connect(username, password)
-
+        
     def handle_login(self, loginMsg):
-        if loginMsg == "good":
+        self.loginMsg = loginMsg
+        self.trigger.connect(self.sort_login)
+        self.trigger.emit()
+     
+    def sort_login(self):
+        if self.loginMsg == "good":
             self.cw.collecting()
             self.username_field.setText("")
             self.password_field.setText("")
@@ -112,7 +117,7 @@ class PrimaryWidget(QWidget):
             self.password_field.setStyleSheet("background: #7DDB7D")
             self.submit_button.setEnabled(False)
             self.logged_in = True
-        elif "username" in loginMsg:
+        elif "username" in self.loginMsg:
             self.username_field.setStyleSheet("background: #EEB4B4")
         else:
             self.password_field.setStyleSheet("background: #EEB4B4")

@@ -11,9 +11,8 @@ Authentication for the Firebase backend
 
 class Database():
 
-    def __init__(self, callback, db_url="https://vivid-inferno-6279.firebaseio.com"):
+    def __init__(self, db_url="https://vivid-inferno-6279.firebaseio.com"):
         self.alive = False
-        self.callback = callback
         self.credentials = {}
         self.userid = -1
         self.latest_paste_num = -1
@@ -75,8 +74,7 @@ class Database():
                 "http://copyeverything.tk/auth.php", {"email": email,
                                                       "pass": pas})
         except requests.exceptions.ConnectionError:
-            self.callback(outcome)
-            return
+            return outcome
 
         json_reply = json.loads(r.text)
 
@@ -88,7 +86,7 @@ class Database():
         elif "username" in json_reply[1] or "email" in json_reply[1]:
             outcome = "incorrect username"
 
-        self.callback(outcome)
+        return outcome
 
 
 if __name__ == "__main__":

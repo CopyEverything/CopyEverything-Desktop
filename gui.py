@@ -14,7 +14,7 @@ Implements a simple GUI that will check if something is being copy pasted.
 
 class MainWindow(QMainWindow):
 
-    def __init__(self, title, w=300, h=300):
+    def __init__(self, title, w=300, h=330):
         super(MainWindow, self).__init__()
         self.height = h
         self.width = w
@@ -63,9 +63,6 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     main = MainWindow("Copy Everything")
     main.set_icon("Copy Everything", os.path.join("img", "logo.svg"))
-    QShortcut(QKeySequence("Ctrl+Q"), main, main.stop)
-    QShortcut(QKeySequence.Paste, main, main.paste)
-    QShortcut(QKeySequence.Copy, main, main.copy)
 
     app.aboutToQuit.connect(main.stop)
     app.exec_()

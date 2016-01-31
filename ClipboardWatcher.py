@@ -9,17 +9,17 @@ def print_to_stdout(clipboard_content):
 
 
 class ClipboardWatcher(threading.Thread):
-
-    def __init__(self, callback, login_callback, predicate=None, pause=1.):
+    def __init__(self, login_callback, callback, predicate=None, pause=1.):
         super(ClipboardWatcher, self).__init__()
         self._predicate = lambda x: True if predicate is None else predicate
         self._callback = callback
+        self._login_callback = login_callback
         self._pause = pause
         self._stopping = False
         self._collecting = False
         self.alive = False
         self.recent_value = pyperclip.paste()
-        self.db = Database(login_callback)
+        self.db = Database()
         self._cv = threading.Condition()
         self.begin()
 
@@ -35,7 +35,7 @@ class ClipboardWatcher(threading.Thread):
                     else:
                         self.update_copy()
                 if self.db.credentials:
-                    self.db.authenticate()
+                    self.login()
                 self._cv.wait_for(self.stopping, timeout=self._pause)
 
     def collecting(self):
@@ -71,6 +71,10 @@ class ClipboardWatcher(threading.Thread):
             pyperclip.copy(latest_paste)
             self.recent_value = latest_paste
 
+    def login(self):
+        res = self.db.authenticate()
+        self._login_callback(res)
+         
     def get_contents(self):
         return self.recent_value
 
