@@ -32,6 +32,8 @@ class ClipboardWatcher(threading.Thread):
                         self.update_paste()
                         if self._predicate(self.recent_value):
                             self._callback(self.recent_value)
+                    else:
+                        self.update_copy()
                 if self.db.credentials:
                     self.db.authenticate()
                 self._cv.wait_for(self.stopping, timeout=self._pause)
@@ -65,7 +67,9 @@ class ClipboardWatcher(threading.Thread):
 
     def update_copy(self):
         latest_paste = self.db.get_latest_paste()
-        pyperclip.copy(latest_paste)
+        if latest_paste != self.recent_value:
+            pyperclip.copy(latest_paste)
+            self.recent_value = latest_paste
 
     def get_contents(self):
         return self.recent_value
