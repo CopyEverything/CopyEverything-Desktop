@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import time
 import threading
 import pyperclip
@@ -68,6 +70,7 @@ class ClipboardWatcher(threading.Thread):
     def update_copy(self):
         latest_paste = self.db.get_latest_paste()
         if latest_paste != self.recent_value:
+            print("updating with", latest_paste)
             pyperclip.copy(latest_paste)
             self.recent_value = latest_paste
 

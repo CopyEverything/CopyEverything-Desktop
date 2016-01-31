@@ -2,6 +2,8 @@
 
 import requests
 import json
+import random
+import string
 from time import time
 
 """
@@ -15,7 +17,6 @@ class Database():
         self.alive = False
         self.credentials = {}
         self.userid = -1
-        self.latest_paste_num = -1
         self.db_url = db_url
         self.token = ""
         self.db = None
@@ -36,29 +37,27 @@ class Database():
         url = self.db_url + "/copies/" + \
             str(self.userid) + ".json?auth=" + self.token
         self.get_latest_paste()  # update the latest paste number
-
-        new_paste = {self.latest_paste_num: {"content": paste,
-                                             "timestamp": int(time())}}
+        
+        chars = string.ascii_uppercase + string.digits
+        rnd_string = ''.join(random.choice(chars) for _ in range(10))
+        new_paste = {"content": paste, "timestamp": int(time())}
         try:
-            requests.patch(url, data=json.dumps(new_paste))
+            requests.post(url, data=json.dumps(new_paste))
         except requests.exceptions.ConnectionError:
             pass
 
     def get_latest_paste(self):
-        self.latest_paste_num = 0
         url = self.db_url + "/copies/" + str(self.userid) +\
-            ".json?orderBy=\"$key\"&auth=" + self.token
+            ".json?orderBy=\"timestamp\"&limitToLast=1&auth=" + self.token
 
         try:
             r = requests.get(url)
-            json_list = json.loads(r.text)
+            json_el = json.loads(r.text)
         except requests.exceptions.ConnectionError:
-            json_list = []
+            json_el = False
 
-        if json_list:
-            latest_paste = json_list[-1]
-            self.latest_paste_num = len(json_list)
-            return latest_paste["content"]
+        if json_el:
+            return json_el.popitem()[1]["content"]
         else:
             self.insert_empty_row()
             return ""

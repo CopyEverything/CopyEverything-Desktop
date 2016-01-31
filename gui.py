@@ -5,6 +5,7 @@ import os
 from primary_widget import PrimaryWidget
 from PyQt5.QtWidgets import (QApplication, QShortcut, QMainWindow, QAction)
 from PyQt5.QtGui import (QKeySequence, QIcon)
+from PyQt5.QtCore import Qt
 
 
 """
@@ -32,11 +33,14 @@ class MainWindow(QMainWindow):
         self.quitAct = QAction("&Quit", self, shortcut=QKeySequence("Ctrl+Q"),
                                statusTip="Quit the program",
                                triggered=self.stop)
+        self.submitAct = QAction("&Submit", self, shortcut=QKeySequence(Qt.Key_Return),
+                                 statusTip="Submit the form", triggered=self.widget.submitted)
 
         self.fileMenu = self.menuBar().addMenu("&Edit")
         self.fileMenu.addAction(self.copyAct)
         self.fileMenu.addAction(self.pasteAct)
         self.fileMenu.addSeparator()
+        self.fileMenu.addAction(self.submitAct)
         self.fileMenu.addAction(self.quitAct)
 
         self.show()
