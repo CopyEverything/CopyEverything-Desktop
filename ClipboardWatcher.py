@@ -29,7 +29,7 @@ class ClipboardWatcher(threading.Thread):
                 if self._collecting:
                     tmp_value = pyperclip.paste()
                     if tmp_value != self.recent_value:
-                        self.update_paste(tmp_value)
+                        self.update_paste()
                         if self._predicate(self.recent_value):
                             self._callback(self.recent_value)
                 if self.db.credentials:
@@ -55,10 +55,13 @@ class ClipboardWatcher(threading.Thread):
     def connect(self, username, password):
         self.db.connect(username, password)
 
-    def update_paste(self, clipboard=None):
-        self.recent_value = pyperclip.paste(
-        ) if clipboard is None else clipboard
-        self.db.insert_new_paste(self.recent_value)
+    def update_paste(self, replacing_paste=None):
+        if replacing_paste is None:
+            replacing_paste = pyperclip.paste()
+
+        if replacing_paste != self.recent_value:
+            self.db.insert_new_paste(replacing_paste)
+            self.recent_value = replacing_paste
 
     def update_copy(self):
         latest_paste = self.db.get_latest_paste()
