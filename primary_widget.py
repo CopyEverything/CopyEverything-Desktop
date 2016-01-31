@@ -26,7 +26,8 @@ class PrimaryWidget(QWidget):
 
         # Start other thread
         self.cw = ClipboardWatcher(self.handle_login, lambda x:
-            print("Change:", str(x).encode(sys.stdout.encoding, errors='replace')))
+            print("Change:", str(x).encode(sys.stdout.encoding, errors='replace')),
+            predicate= lambda x : len(x) > 0)
 
         self.preload_ressources()
 

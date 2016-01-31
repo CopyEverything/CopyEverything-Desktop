@@ -63,16 +63,16 @@ class ClipboardWatcher(threading.Thread):
 
     def update_paste(self, replacing_paste=None):
         if replacing_paste is None:
-            replacing_paste = str(pyperclip.paste())
+            replacing_paste = pyperclip.paste()
 
-        if replacing_paste != self.recent_value:
+        if replacing_paste != self.recent_value and len(replacing_paste) > 0:
             self.db.insert_new_paste(replacing_paste)
             self.recent_value = replacing_paste
 
     def update_copy(self):
-        latest_paste = str(self.db.get_latest_paste())
-        if latest_paste != self.recent_value:
-            print("updating with", latest_paste.encode(sys.stdout.encoding, errors='replace'))
+        latest_paste = self.db.get_latest_paste()
+        if latest_paste != self.recent_value and len(latest_paste) > 0:
+            print("updating with", str(latest_paste).encode(sys.stdout.encoding, errors='replace'))
             pyperclip.copy(latest_paste)
             self.recent_value = latest_paste
 
