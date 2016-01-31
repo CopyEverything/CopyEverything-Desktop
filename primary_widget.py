@@ -42,16 +42,18 @@ class PrimaryWidget(QWidget):
 
     def preload_ressources(self):
         self.logo = QPixmap(
-            os.path.join("img", "logo.png")).scaledToWidth(self.width // 2 - 10)
-        self.loading_movie = QMovie(
-            os.path.join("img", "loading.gif"))
+            os.path.join("img", "logo.png")).scaledToWidth(self.width // 2 - 5)
+        self.loading_movie = QMovie(os.path.join("img", "loading.gif"))
         self.loading_movie.setScaledSize(QSize(self.logo.width() - 30,
                                                self.logo.height() - 30))
 
     def createGridGroupBox(self):
         gridGroupBox = QGroupBox("Copy Everything Login")
+        gridGroupBox.setStyleSheet("QGroupBox { border: 0px; }")
         layout = QGridLayout()
-        layout.setVerticalSpacing(2)
+        layout.setVerticalSpacing(4)
+        layout.setSpacing(3)
+
 
         row = 1
         self.main_label = QLabel("Main Label")
