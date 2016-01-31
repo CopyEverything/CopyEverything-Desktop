@@ -51,10 +51,9 @@ class Database():
 
         try:
             r = requests.get(url)
+            json_list = json.loads(r.text)
         except requests.exceptions.ConnectionError:
-            r = "[]"
-
-        json_list = json.loads(r.text)
+            json_list = []
 
         if json_list:
             latest_paste = json_list[-1]
