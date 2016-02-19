@@ -10,4 +10,9 @@ build
 deploy_key
 deploy_key.pub
 documentation/ditaxml
+old
 .DS_Store
+=======
+*.pro.user
+.DS_Store
+

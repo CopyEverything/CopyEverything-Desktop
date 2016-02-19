@@ -1,6 +1,4 @@
-import time
-import threading
-import pyperclip
+from PyQt5.QtWidgets import (QApplication)
 from db import Database
 
 
@@ -8,80 +6,44 @@ def print_to_stdout(clipboard_content):
     print("Found url: %s" % str(clipboard_content))
 
 
-class ClipboardWatcher(threading.Thread):
+class ClipboardWatcher():
 
-    def __init__(self, callback, login_callback, predicate=None, pause=1.):
-        super(ClipboardWatcher, self).__init__()
-        self._predicate = lambda x: True if predicate is None else predicate
-        self._callback = callback
-        self._pause = pause
-        self._stopping = False
-        self._collecting = False
-        self.alive = False
-        self.recent_value = pyperclip.paste()
-        self.db = Database(login_callback)
-        self._cv = threading.Condition()
-        self.begin()
+    def __init__(self, login_callback):
+        self.db = Database(login_callback, self.update_from_server)
 
-    def run(self):
-        with self._cv:
-            while not self._stopping:
-                if self._collecting:
-                    tmp_value = pyperclip.paste()
-                    if tmp_value != self.recent_value:
-                        self.update_paste()
-                        if self._predicate(self.recent_value):
-                            self._callback(self.recent_value)
-                    else:
-                        self.update_copy()
-                if self.db.credentials:
-                    self.db.authenticate()
-                self._cv.wait_for(self.stopping, timeout=self._pause)
+        self.clipboard = QApplication.clipboard()
+        self._cur_contents = self.clipboard.text()
 
-    def collecting(self):
-        self._collecting = True
+        self.clipboard.dataChanged.connect(self.update_to_server)
 
-    def begin(self):
-        if not self.alive:
-            self.start()
-            self.alive = True
+    def authenticate(self, username, password):
+        self.db.authenticate(username, password)
 
-    def stop(self):
-        if self.alive:
-            self._stopping = True
-            self.alive = False
+    def update_to_server(self, replacing_paste=None):
+        new_contents = self.clipboard.text()
 
-    def stopping(self):
-        return self._stopping
+        if new_contents != self._cur_contents:
+            self.db.insert_new_paste(new_contents)
+            self._cur_contents = new_contents
 
-    def connect(self, username, password):
-        self.db.connect(username, password)
-
-    def update_paste(self, replacing_paste=None):
-        if replacing_paste is None:
-            replacing_paste = pyperclip.paste()
-
-        if replacing_paste != self.recent_value:
-            self.db.insert_new_paste(replacing_paste)
-            self.recent_value = replacing_paste
-
-    def update_copy(self):
-        latest_paste = self.db.get_latest_paste()
+    def update_from_server(self, latest_paste):
         if latest_paste != self.recent_value:
-            pyperclip.copy(latest_paste)
-            self.recent_value = latest_paste
+            self.clipboard.setText(latest_paste)
+            self._cur_contents = latest_paste
 
     def get_contents(self):
-        return self.recent_value
+        return self._cur_contents
+
+    def stop(self):
+        self.db.stop()
 
 if __name__ == "__main__":
-    cw = ClipboardWatcher(print_to_stdout, 5.)
-    cw.start()
-    while 1:
-        try:
-            print("Waiting for changed clipboard...")
-            time.sleep(10)
-        except KeyboardInterrupt:
-            cw.stop()
-            break
-    # cw.run()
+    import sys
+    from PyQt5.QtCore import (QTimer)
+
+    app = QApplication(sys.argv)
+    cw = ClipboardWatcher(None, None)
+    timer = QTimer()
+    timer.start(500)  # You may change this if you wish.
+    timer.timeout.connect(lambda: None)  # Let the interpreter run each 500 ms.
+    sys.exit(app.exec_())

@@ -1,99 +1,81 @@
 #!/usr/bin/env python3
 
-import requests
-import json
-from time import time
+import threading
+from socketIO_client import SocketIO, LoggingNamespace
 
 """
-Authentication for the Firebase backend
+Authentication for the SocketIO backend
 """
 
 
-class Database():
+class Database(threading.Thread):
 
-    def __init__(self, callback, db_url="https://vivid-inferno-6279.firebaseio.com"):
-        self.alive = False
-        self.callback = callback
+    def __init__(self, login_callback, fetch_callback, db_url="localhost", port=3000):
+        super(Database, self).__init__()
+        self.login_callback = login_callback
         self.credentials = {}
-        self.userid = -1
-        self.latest_paste_num = -1
+        self.online = False
+        self._running = True
         self.db_url = db_url
-        self.token = ""
-        self.db = None
+        self.port = port
 
-    def connect(self, user, pswd):
-        self.credentials = {"username": user, "password": pswd}
+        self.sock = SocketIO(self.db_url, self.port, LoggingNamespace)
 
-    def insert_empty_row(self):
-        url = self.db_url + "/copies.json?auth=" + self.token
-        new_dict = {self.userid: []}
+        self.sock.on('connect', self.connected)
+        self.sock.on('auth resp', self.authenticate_reply)
+        self.sock.on('new server copy', fetch_callback)
+        self.sock.on('disconnect', self.disconnected)
+        self.start()
 
-        try:
-            requests.put(url, data=json.dumps(new_dict))
-        except requests.exceptions.ConnectionError:
-            pass
+    def good(self):
+        return self.auth and self.online
+
+    def connected(self):
+        print("connected")
+        self.online = True
+
+    def disconnected(self, data):
+        # attempt to reconnect on disconnect
+        self.auth = False
+        if self.credentials:
+            self.authenticate(self.credentials['username'],
+                              self.credentials['password'])
 
     def insert_new_paste(self, paste):
-        url = self.db_url + "/copies/" + \
-            str(self.userid) + ".json?auth=" + self.token
-        self.get_latest_paste()  # update the latest paste number
+        self.sock.emit('new client copy', paste)
 
-        new_paste = {self.latest_paste_num: {"content": paste,
-                                             "timestamp": int(time())}}
-        try:
-            requests.patch(url, data=json.dumps(new_paste))
-        except requests.exceptions.ConnectionError:
-            pass
+    def authenticate(self, user, pswd):
+        if not self.connected:
+            print("Not connected!")
+            self.login_callback("Not connected!")
 
-    def get_latest_paste(self):
-        self.latest_paste_num = 0
-        url = self.db_url + "/copies/" + str(self.userid) +\
-            ".json?orderBy=\"$key\"&auth=" + self.token
+        self.credentials = {"username": user,
+                            "password": pswd}
+        self.sock.emit('auth', self.credentials)
 
-        try:
-            r = requests.get(url)
-        except requests.exceptions.ConnectionError:
-            r = "[]"
-
-        json_list = json.loads(r.text)
-
-        if json_list:
-            latest_paste = json_list[-1]
-            self.latest_paste_num = len(json_list)
-            return latest_paste["content"]
-        else:
-            self.insert_empty_row()
-            return ""
-
-    def authenticate(self):
-        outcome = "incorrect password"
-        email, pas = self.credentials["username"], self.credentials["password"]
-        self.credentials = {}
-
-        try:
-            r = requests.post(
-                "http://copyeverything.tk/auth.php", {"email": email,
-                                                      "pass": pas})
-        except requests.exceptions.ConnectionError:
-            self.callback(outcome)
-            return
-
-        json_reply = json.loads(r.text)
-
-        if r.status_code == 200 and json_reply[0]:
+    # reply will be in format: [good, str_resp (usually '')]
+    def authenticate_reply(self, data):
+        if data[0]:
+            self.auth = True
             outcome = "good"
-            self.userid = json_reply[1]
-            self.token = json_reply[2]
+        else:
+            outcome = "incorrect password"  # incorrect username
 
-        elif "username" in json_reply[1] or "email" in json_reply[1]:
-            outcome = "incorrect username"
+        self.login_callback(outcome)
 
-        self.callback(outcome)
+    def stop(self):
+        self._running = False
+
+    def run(self):
+        while(self._running):
+            self.sock.wait(seconds=0.5)
 
 
 if __name__ == "__main__":
-    db = Database(lambda x: print(x))
-    db.connect("nico@test.com", "testtest")
-    db.authenticate()
-    db.get_latest_paste()
-    db.insert_new_paste("Not last jking")
+    db = Database(lambda x: print(x), lambda x: print(x))
+    db.authenticate("5westbury5@gmail.com", "testtest")
+    db.sock.wait(1)
+    db.insert_new_paste("test")
+    db.sock.wait(1)
+    # db.get_latest_paste()
+    # db.insert_new_paste("Not last jking")

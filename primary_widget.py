@@ -4,28 +4,31 @@ import os
 from PyQt5.QtWidgets import (QWidget, QGridLayout, QVBoxLayout,
                              QGroupBox, QLabel, QLineEdit,
                              QPushButton)
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import (Qt, QSize, pyqtSignal)
 from PyQt5.QtGui import (QMovie, QPixmap)
 from ClipboardWatcher import ClipboardWatcher
 
 
 class PrimaryWidget(QWidget):
+    login_trigger = pyqtSignal()
 
     def __init__(self, w, h):
-        # init QWidget Parent
+        # Init QWidget Parent
         super(PrimaryWidget, self).__init__()
 
-        # set window props
+        # Set window props
         self.height = h
         self.width = w
         self.setFixedSize(w, h)
         self.logged_in = False
 
-        # Start other thread
-        self.cw = ClipboardWatcher(lambda x: print("change xxx:", x),
-                                   self.handle_login)
-
+        # Load images etc.
         self.preload_ressources()
+
+        self.login_trigger.connect(self.login)
+        self.login_msg = ""
+
+        self.cw = ClipboardWatcher(self.handle_login)
 
         # Create Window
         mainLayout = QVBoxLayout()
@@ -99,11 +102,14 @@ class PrimaryWidget(QWidget):
         self.submit_button.setEnabled(False)
         self.main_label.setMovie(self.loading_movie)
         self.loading_movie.start()
-        self.cw.connect(username, password)
+        self.cw.authenticate(username, password)
 
     def handle_login(self, loginMsg):
-        if loginMsg == "good":
-            self.cw.collecting()
+        self.login_msg = loginMsg
+        self.login_trigger.emit()
+
+    def login(self):
+        if self.login_msg == "good":
             self.username_field.setText("")
             self.password_field.setText("")
             self.username_field.setReadOnly(True)
@@ -112,7 +118,7 @@ class PrimaryWidget(QWidget):
             self.password_field.setStyleSheet("background: #7DDB7D")
             self.submit_button.setEnabled(False)
             self.logged_in = True
-        elif "username" in loginMsg:
+        elif "username" in self.login_msg:
             self.username_field.setStyleSheet("background: #EEB4B4")
         else:
             self.password_field.setStyleSheet("background: #EEB4B4")
@@ -127,12 +133,6 @@ class PrimaryWidget(QWidget):
                 self.password_field.setStyleSheet("background: none")
             else:
                 self.username_field.setStyleSheet("background: none")
-
-    def paste(self):
-        self.cw.update_paste()
-
-    def copy(self):
-        self.cw.update_copy()
 
     def stop(self):
         self.cw.stop()
