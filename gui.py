@@ -1,61 +1,58 @@
-#!/usr/bin/env python3
-
 import sys
 import os
-from primary_widget import PrimaryWidget
-from PyQt5.QtWidgets import (QApplication, QShortcut, QMainWindow, QAction)
-from PyQt5.QtGui import (QKeySequence, QIcon)
+
+from PyQt5.QtGui import QIcon, QGuiApplication
+from PyQt5.QtQml import QQmlApplicationEngine
+from PyQt5.QtCore import (QObject, pyqtSlot, pyqtSignal,
+                          QMetaObject, QVariant, Qt, Q_ARG)
+from clipboardWatcher import clipboardWatcher
 
 
-"""
-Implements a simple GUI that will check if something is being copy pasted.
-"""
+class QMLNameSpace(QObject):
 
+    on_login = pyqtSignal()
 
-class MainWindow(QMainWindow):
+    def __init__(self, engine):
+        super(QMLNameSpace, self).__init__()
+        self.cw = clipboardWatcher(self.login_result)
+        self.engine = engine
 
-    def __init__(self, title, w=300, h=300):
-        super(MainWindow, self).__init__()
-        self.height = h
-        self.width = w
-        self.setFixedSize(w, h)
-        self.setWindowTitle(title)
-        self.widget = PrimaryWidget(w, h)
-        self.setCentralWidget(self.widget)
+    def login_result(self, string):
+        print("got result", string)
 
-        """
-        self.copyAct = QAction("&Copy", self, shortcut=QKeySequence.Copy,
-                               statusTip="Copy the current selection's contents to the clipboard",
-                               triggered=self.copy)
-        self.pasteAct = QAction("&Paste", self, shortcut=QKeySequence.Paste,
-                                statusTip="Paste the clipboard's contents into the current selection",
-                                triggered=self.paste)
-        """
-        self.quitAct = QAction("&Quit", self, shortcut=QKeySequence("Ctrl+Q"),
-                               statusTip="Quit the program",
-                               triggered=self.stop)
+        obj = self.engine.rootObjects()[0]
+        myObj = obj.findChild(QObject, 'loginHandle')
+        QMetaObject.invokeMethod(myObj, "loginResult", Qt.QueuedConnection,
+                                 Q_ARG(QVariant, string))
 
-        self.fileMenu = self.menuBar().addMenu("&Edit")
-        # self.fileMenu.addSeparator()
-        self.fileMenu.addAction(self.quitAct)
+    @pyqtSlot(str, str)
+    def login(self, email, password):
+        self.cw.authenticate(email, password)
+        # self.on_login.emit()
 
-        self.show()
-
-    def set_icon(self, icon_title, icon_path):
-        self.setWindowTitle(icon_title)
-        self.setWindowIcon(QIcon(icon_path))
-
+    @pyqtSlot()
     def stop(self):
-        self.widget.stop()
+        self.cw.stop()
         sys.exit()
 
-
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
+    app = QGuiApplication(sys.argv)
 
-    main = MainWindow("Copy Everything")
-    main.set_icon("Copy Everything", os.path.join("img", "logo.svg"))
-    QShortcut(QKeySequence("Ctrl+Q"), main, main.stop)
+    # add icon
+    app_icon = QIcon()
+    app_icon.addFile(os.path.join("img", "logo.jpg"))
+    app.setWindowIcon(app_icon)
 
-    app.aboutToQuit.connect(main.stop)
-    app.exec_()
+    engine = QQmlApplicationEngine()
+    ctx = engine.rootContext()
+    py = QMLNameSpace(engine)
+    ctx.setContextProperty("main", engine)
+    ctx.setContextProperty("py", py)
+
+    engine.load('gui.qml')
+
+    window = engine.rootObjects()[0]
+    window.show()
+
+    app.aboutToQuit.connect(py.stop)
+    sys.exit(app.exec_())

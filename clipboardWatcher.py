@@ -1,12 +1,8 @@
-from PyQt5.QtWidgets import (QApplication)
+from PyQt5.QtWidgets import QApplication
 from db import Database
 
 
-def print_to_stdout(clipboard_content):
-    print("Found url: %s" % str(clipboard_content))
-
-
-class ClipboardWatcher():
+class clipboardWatcher():
 
     def __init__(self, login_callback):
         self.db = Database(login_callback, self.update_from_server)
@@ -42,7 +38,7 @@ if __name__ == "__main__":
     from PyQt5.QtCore import (QTimer)
 
     app = QApplication(sys.argv)
-    cw = ClipboardWatcher(None, None)
+    cw = clipboardWatcher(None, None)
     timer = QTimer()
     timer.start(500)  # You may change this if you wish.
     timer.timeout.connect(lambda: None)  # Let the interpreter run each 500 ms.
