@@ -8,3 +8,7 @@ Dependencies:
 	-Qt5 \w QML
 	-[QML Material](https://github.com/papyros/qml-material)
 	-[socketIO-client](https://pypi.python.org/pypi/socketIO-client)
+    
+How to compile:
+    - Run:: pyinstaller gui.py --noconsole -F --clean --distpath dist --workpath build --icon=[full path]\favicon.ico -n CopyEverything
+    - Copy the qml folder to the dist folder

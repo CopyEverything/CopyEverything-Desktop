@@ -1,18 +1,20 @@
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtGui import QGuiApplication
 from db import Database
 
 
 class clipboardWatcher():
 
     def __init__(self, login_callback):
-        self.db = Database(login_callback, self.update_from_server)
-
-        self.clipboard = QApplication.clipboard()
+        self.clipboard = QGuiApplication.clipboard()
         self._cur_contents = self.clipboard.text()
-
         self.clipboard.dataChanged.connect(self.update_to_server)
+        self.first_login = True
+        self.login_callback = login_callback
 
     def authenticate(self, username, password):
+        if self.first_login:
+            self.db = Database(self.login_callback, self.update_from_server)
+            self.first_login = False
         self.db.authenticate(username, password)
 
     def update_to_server(self, replacing_paste=None):
@@ -31,7 +33,8 @@ class clipboardWatcher():
         return self._cur_contents
 
     def stop(self):
-        self.db.stop()
+        if not self.first_login:
+            self.db.stop()
 
 if __name__ == "__main__":
     import sys

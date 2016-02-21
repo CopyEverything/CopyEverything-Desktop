@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 
 import threading
-from socketIO_client import SocketIO, LoggingNamespace
+from socketIO_client import SocketIO, LoggingNamespace, logs
+
+
 
 """
 Authentication for the SocketIO backend
 """
 
+class CustomSocketIO(SocketIO):
+    def _yield_warning_screen(self, seconds=None):
+        yield from logs._yield_elapsed_time(seconds)
 
 class Database(threading.Thread):
 
@@ -21,7 +26,7 @@ class Database(threading.Thread):
         self._running = True
         self.db_url = db_url
         self.port = port
-
+        self.sock = False
         self.start()
 
     def good(self):
@@ -31,11 +36,17 @@ class Database(threading.Thread):
         return self.online
 
     def socket_setup(self):
-        self.sock = SocketIO(self.db_url, self.port, LoggingNamespace)
-        self.sock.on('connect', self.connected)
-        self.sock.on('auth resp', self.authenticate_reply)
-        self.sock.on('new server copy', self.fetch_callback)
-        self.sock.on('disconnect', self.disconnected)
+        while(self._running):
+            try:
+                self.sock = CustomSocketIO(self.db_url, self.port, LoggingNamespace)
+            except:
+                pass
+        
+        if(self._running):
+            self.sock.on('connect', self.connected)
+            self.sock.on('auth resp', self.authenticate_reply)
+            self.sock.on('new server copy', self.fetch_callback)
+            self.sock.on('disconnect', self.disconnected)
 
     def connected(self):
         self.online = True
@@ -48,13 +59,17 @@ class Database(threading.Thread):
                               self.credentials['password'])
 
     def insert_new_paste(self, paste):
-        self.sock.emit('new client copy', paste)
-
-    def authenticate(self, user, pswd):
-        if not self.online:
-            print("Not connected!")
+        if self.sock:
+            self.sock.emit('new client copy', paste)
+        else:
             self.login_callback("Unable to connect!\n"
                                 "Check your internet connection.")
+
+    def authenticate(self, user, pswd):
+        if not self.online or not self.sock:
+            self.login_callback("Unable to connect!\n"
+                                "Check your internet connection.")
+            return False
 
         self.credentials = {"username": user,
                             "password": pswd}
@@ -77,13 +92,14 @@ class Database(threading.Thread):
         self.socket_setup()
 
         while(self._running):
-            self.sock.wait(seconds=0.5)
+            self.sock.wait(0.5)
 
 
 if __name__ == "__main__":
     db = Database(lambda x: print(x), lambda x: print(x))
-    db.authenticate("5westbury5@gmail.com", "testtest")
     db.sock.wait(1)
+    db.authenticate("5westbury5@gmail.com", "testtest")
+
     db.insert_new_paste("test")
     db.sock.wait(1)
     # db.get_latest_paste()

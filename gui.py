@@ -1,5 +1,5 @@
 import sys
-import os
+from os import path, getcwd
 
 from PyQt5.QtGui import QIcon, QGuiApplication
 from PyQt5.QtQml import QQmlApplicationEngine
@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
     # add icon
     app_icon = QIcon()
-    app_icon.addFile(os.path.join("img", "logo.jpg"))
+    app_icon.addFile(path.join('qml', 'img', 'logo.jpg'))
     app.setWindowIcon(app_icon)
 
     engine = QQmlApplicationEngine()
@@ -48,8 +48,11 @@ if __name__ == "__main__":
     py = QMLNameSpace(engine)
     ctx.setContextProperty("main", engine)
     ctx.setContextProperty("py", py)
-
-    engine.load('gui.qml')
+    
+    # engine.addImportPath(path.join(getcwd(), 'qml'))
+    engine.setImportPathList([path.join(getcwd(), 'qml', 'lib')])
+    
+    engine.load('qml/gui.qml')
 
     window = engine.rootObjects()[0]
     window.show()
