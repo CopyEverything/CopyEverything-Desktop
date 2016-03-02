@@ -9,12 +9,9 @@ from clipboardWatcher import clipboardWatcher
 
 
 class QMLNameSpace(QObject):
-
-    on_login = pyqtSignal()
-
-    def __init__(self, engine):
+    def __init__(self, engine, qtClipboard):
         super(QMLNameSpace, self).__init__()
-        self.cw = clipboardWatcher(self.login_result)
+        self.cw = clipboardWatcher(qtClipboard, self.login_result)
         self.engine = engine
 
     def login_result(self, string):
@@ -27,7 +24,6 @@ class QMLNameSpace(QObject):
     @pyqtSlot(str, str)
     def login(self, email, password):
         self.cw.authenticate(email, password)
-        # self.on_login.emit()
 
     @pyqtSlot()
     def stop(self):
@@ -36,7 +32,8 @@ class QMLNameSpace(QObject):
 
 if __name__ == "__main__":
     app = QGuiApplication(sys.argv)
-
+    clipboard = app.clipboard()
+    
     # add icon
     app_icon = QIcon()
     app_icon.addFile(path.join('qml', 'img', 'logo.jpg'))
@@ -44,7 +41,7 @@ if __name__ == "__main__":
 
     engine = QQmlApplicationEngine()
     ctx = engine.rootContext()
-    py = QMLNameSpace(engine)
+    py = QMLNameSpace(engine, clipboard)
     ctx.setContextProperty("main", engine)
     ctx.setContextProperty("py", py)
 

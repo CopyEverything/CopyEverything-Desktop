@@ -1,13 +1,15 @@
-from PyQt5.QtGui import QGuiApplication
 from db import Database
+from PyQt5.QtCore import (pyqtSignal, QObject)
 
+class clipboardWatcher(QObject):
+    on_server_update = pyqtSignal()
 
-class clipboardWatcher():
-
-    def __init__(self, login_callback):
-        self.clipboard = QGuiApplication.clipboard()
+    def __init__(self, qtClipboard, login_callback):
+        super(clipboardWatcher, self).__init__()
+        self.clipboard = qtClipboard
         self._cur_contents = self.clipboard.text()
         self.clipboard.dataChanged.connect(self.update_to_server)
+        self.on_server_update.connect(self.update_clipboard)
         self.first_login = True
         self.login_callback = login_callback
 
@@ -26,8 +28,14 @@ class clipboardWatcher():
 
     def update_from_server(self, latest_paste):
         if latest_paste != self._cur_contents:
-            self.clipboard.setText(latest_paste)
             self._cur_contents = latest_paste
+            self.on_server_update.emit()
+             
+    def update_clipboard(self, paste = ""):
+        if paste:
+            self.clipboard.setText(paste)
+        else:
+            self.clipboard.setText(self._cur_contents)
 
     def get_contents(self):
         return self._cur_contents
