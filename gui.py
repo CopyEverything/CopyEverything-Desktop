@@ -18,8 +18,7 @@ class QMLNameSpace(QObject):
         self.engine = engine
 
     def login_result(self, string):
-        print("got result", string)
-
+        # print("got result", string)
         obj = self.engine.rootObjects()[0]
         myObj = obj.findChild(QObject, 'loginHandle')
         QMetaObject.invokeMethod(myObj, "loginResult", Qt.QueuedConnection,
@@ -48,10 +47,10 @@ if __name__ == "__main__":
     py = QMLNameSpace(engine)
     ctx.setContextProperty("main", engine)
     ctx.setContextProperty("py", py)
-    
+
     # engine.addImportPath(path.join(getcwd(), 'qml'))
     engine.setImportPathList([path.join(getcwd(), 'qml', 'lib')])
-    
+
     engine.load('qml/gui.qml')
 
     window = engine.rootObjects()[0]

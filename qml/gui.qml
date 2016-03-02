@@ -44,6 +44,7 @@ ApplicationWindow{
                progressCircle.visible = true;
                progressCircle.color = Palette.colors["green"]["900"]
                progressCircle.indeterminate = false;
+               errorLabel.visible = false;
                checkDone.visible = true;
            }else{
                emailField.readOnly = false;
@@ -51,17 +52,17 @@ ApplicationWindow{
                submitButton.enabled = true;
                progressCircle.visible = false;
 
-               if (outcome.indexOf("password") > -1){
+               errorLabel.text = outcome;
+               errorLabel.color = Palette.colors["red"]["500"];
+               errorLabel.visible = true;
+
+               var lowerCaseOutcome = outcome.toLowerCase()
+               if (lowerCaseOutcome.indexOf("password") > -1){
                    loginHandle.setError(passwordField, Palette.colors["red"]["500"], "Incorrect Password")
-               }else if (outcome.indexOf("email") > -1){
-                   loginHandle.setError(passwordField, Palette.colors["red"]["500"], "Incorrect Email")
-               }else{
-                  errorLabel.text = outcome;
-                  errorLabel.visible = true;
+               }else if (lowerCaseOutcome.indexOf("email") > -1 || lowerCaseOutcome.indexOf("user") > -1){
+                   loginHandle.setError(emailField, Palette.colors["red"]["500"], "Incorrect Email")
                }
            }
-
-           // console.log("result", outcome)
         }
 
         function setError(obj, color, outcome){
@@ -177,7 +178,10 @@ ApplicationWindow{
                         anchors.horizontalCenter: parent.horizontalCenter
                         onClicked:{
                             if(emailField.length == 0 && passwordField.length == 0){
-                                Qt.openUrlExternally("http://copyeverything.tk/")
+                                Qt.openUrlExternally("https://copyeverythingapp.com");
+                                errorLabel.text = "Opened registration page in browser";
+                                errorLabel.color = "#448684";
+                                errorLabel.visible = true;
                                 return;
                             }
 
@@ -197,6 +201,7 @@ ApplicationWindow{
                                 emailField.readOnly = true;
                                 passwordField.readOnly = true;
                                 progressCircle.visible = true;
+                                errorLabel.visible = false;
                                 py.login(emailField.text, passwordField.text)
                             }
                         }

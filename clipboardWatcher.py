@@ -25,7 +25,7 @@ class clipboardWatcher():
             self._cur_contents = new_contents
 
     def update_from_server(self, latest_paste):
-        if latest_paste != self.recent_value:
+        if latest_paste != self._cur_contents:
             self.clipboard.setText(latest_paste)
             self._cur_contents = latest_paste
 
