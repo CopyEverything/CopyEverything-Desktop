@@ -41,7 +41,7 @@ class Database(threading.Thread):
             try:
                 self.sock = CustomSocketIO(
                     self.db_url, self.port, LoggingNamespace,
-                    verify=False)
+                    verify=True)
                 connected = True
             except:
                 sleep(.5)
